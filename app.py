@@ -1,13 +1,12 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv
-from google import genai
-
-# Load environment variables
-load_dotenv()
+import google.generativeai as genai
 
 # Secrets se API Key lein
 api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+
+if api_key:
+    genai.configure(api_key=api_key)
 
 # Streamlit Page Setup
 st.set_page_config(page_title="AI Lab Assistant", page_icon="🧪", layout="wide")
@@ -40,12 +39,9 @@ with tab1:
             else:
                 with st.spinner("Generating detailed procedure..."):
                     try:
-                        client = genai.Client(api_key=api_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
-                        response = client.models.generate_content(
-                            model="gemini-1.5-flash",
-                            contents=prompt
-                        )
+                        response = model.generate_content(prompt)
                         st.markdown(response.text)
                     except Exception as e:
                         st.error(f"Error generating guide: {str(e)}")
@@ -69,12 +65,9 @@ with tab2:
             else:
                 with st.spinner("Formatting report..."):
                     try:
-                        client = genai.Client(api_key=api_key)
+                        model = genai.GenerativeModel('gemini-1.5-flash')
                         prompt = f"Format this into a clean academic lab report:\nTitle: {title}\nObjective: {objective}\nObservations: {observations}\nConclusion: {conclusion}"
-                        response = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=prompt
-                        )
+                        response = model.generate_content(prompt)
                         st.markdown("---")
                         st.markdown(response.text)
                     except Exception as e:
