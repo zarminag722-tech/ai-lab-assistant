@@ -43,7 +43,7 @@ with tab1:
                         client = genai.Client(api_key=api_key)
                         prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
                         response = client.models.generate_content(
-                            model="gemini-1.5-flash",
+                            model="gemini-2.0-flash",
                             contents=prompt
                         )
                         st.markdown(response.text)
@@ -72,7 +72,7 @@ with tab2:
                         client = genai.Client(api_key=api_key)
                         prompt = f"Format this into a clean academic lab report:\nTitle: {title}\nObjective: {objective}\nObservations: {observations}\nConclusion: {conclusion}"
                         response = client.models.generate_content(
-                            model="gemini-1.5-flash",
+                            model="gemini-2.0-flash",
                             contents=prompt
                         )
                         st.markdown("---")
