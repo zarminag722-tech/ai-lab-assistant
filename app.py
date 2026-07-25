@@ -43,7 +43,7 @@ with tab1:
                         client = genai.Client(api_key=api_key)
                         prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
                         response = client.models.generate_content(
-                            model="gemini-2.0-flash-lite",
+                            model="gemini-2.0-flash",
                             contents=prompt
                         )
                         st.markdown(response.text)
