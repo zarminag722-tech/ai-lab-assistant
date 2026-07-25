@@ -1,13 +1,9 @@
 import os
+import requests
 import streamlit as st
-from dotenv import load_dotenv
-from google import genai
 
-# Load environment variables
-load_dotenv()
-
-# Secrets se API Key lein
-api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
+# Secrets se OpenRouter API Key lein
+api_key = st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
 
 # Streamlit Page Setup
 st.set_page_config(page_title="AI Lab Assistant", page_icon="🧪", layout="wide")
@@ -15,7 +11,6 @@ st.set_page_config(page_title="AI Lab Assistant", page_icon="🧪", layout="wide
 st.title("🧪 AI Lab Assistant")
 st.write("Welcome! Your AI assistant for university science and CS lab experiments, safety, and reports.")
 
-# System Prompt
 SYSTEM_PROMPT = """
 You are an expert AI Lab Assistant for university students.
 Always follow this structured response format:
@@ -26,7 +21,25 @@ Always follow this structured response format:
 Keep explanations clear, structured, and academic.
 """
 
-# Navigation Tabs
+def query_openrouter(prompt_text):
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "meta-llama/llama-3.2-1b-instruct:free",
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt_text}
+        ]
+    }
+    res = requests.post(url, json=payload, headers=headers)
+    if res.status_code == 200:
+        return res.json()['choices'][0]['message']['content']
+    else:
+        raise Exception(f"API Error {res.status_code}: {res.text}")
+
 tab1, tab2 = st.tabs(["📋 Experiment Guide", "📑 Lab Report Generator"])
 
 with tab1:
@@ -36,17 +49,12 @@ with tab1:
     if st.button("Generate Guide"):
         if exp_name:
             if not api_key:
-                st.error("API Key missing! Please set GEMINI_API_KEY in Streamlit Secrets.")
+                st.error("API Key missing! Please set OPENROUTER_API_KEY in Streamlit Secrets.")
             else:
                 with st.spinner("Generating detailed procedure..."):
                     try:
-                        client = genai.Client(api_key=api_key)
-                        prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
-                        response = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=prompt
-                        )
-                        st.markdown(response.text)
+                        result = query_openrouter(f"Provide a lab guide for: {exp_name}")
+                        st.markdown(result)
                     except Exception as e:
                         st.error(f"Error generating guide: {str(e)}")
         else:
@@ -69,14 +77,10 @@ with tab2:
             else:
                 with st.spinner("Formatting report..."):
                     try:
-                        client = genai.Client(api_key=api_key)
                         prompt = f"Format this into a clean academic lab report:\nTitle: {title}\nObjective: {objective}\nObservations: {observations}\nConclusion: {conclusion}"
-                        response = client.models.generate_content(
-                            model="gemini-2.0-flash",
-                            contents=prompt
-                        )
+                        result = query_openrouter(prompt)
                         st.markdown("---")
-                        st.markdown(response.text)
+                        st.markdown(result)
                     except Exception as e:
                         st.error(f"Error generating report: {str(e)}")
         else:
