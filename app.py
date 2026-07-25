@@ -5,7 +5,9 @@ from google import genai
 
 # Load environment variables
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+
+# Secrets se API Key lein
+api_key = st.secrets.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 
 # Streamlit Page Setup
 st.set_page_config(page_title="AI Lab Assistant", page_icon="🧪", layout="wide")
@@ -34,16 +36,19 @@ with tab1:
     if st.button("Generate Guide"):
         if exp_name:
             if not api_key:
-                st.error("API Key missing! Please set GEMINI_API_KEY in Streamlit Secrets or .env file.")
+                st.error("API Key missing! Please set GEMINI_API_KEY in Streamlit Secrets.")
             else:
                 with st.spinner("Generating detailed procedure..."):
-                    client = genai.Client(api_key=api_key)
-                    prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
-                    response = client.models.generate_content(
-                        model="gemini-2.5-flash",
-                        contents=prompt
-                    )
-                    st.markdown(response.text)
+                    try:
+                        client = genai.Client(api_key=api_key)
+                        prompt = f"{SYSTEM_PROMPT}\n\nProvide a lab guide for: {exp_name}"
+                        response = client.models.generate_content(
+                            model="gemini-1.5-flash",
+                            contents=prompt
+                        )
+                        st.markdown(response.text)
+                    except Exception as e:
+                        st.error(f"Error generating guide: {str(e)}")
         else:
             st.warning("Please type an experiment name.")
 
@@ -63,13 +68,16 @@ with tab2:
                 st.error("API Key missing!")
             else:
                 with st.spinner("Formatting report..."):
-                    client = genai.Client(api_key=api_key)
-                    prompt = f"Format this into a clean academic lab report:\nTitle: {title}\nObjective: {objective}\nObservations: {observations}\nConclusion: {conclusion}"
-                    response = client.models.generate_content(
-                        model="gemini-1.5-flash",
-                        contents=prompt
-                    )
-                    st.markdown("---")
-                    st.markdown(response.text)
+                    try:
+                        client = genai.Client(api_key=api_key)
+                        prompt = f"Format this into a clean academic lab report:\nTitle: {title}\nObjective: {objective}\nObservations: {observations}\nConclusion: {conclusion}"
+                        response = client.models.generate_content(
+                            model="gemini-1.5-flash",
+                            contents=prompt
+                        )
+                        st.markdown("---")
+                        st.markdown(response.text)
+                    except Exception as e:
+                        st.error(f"Error generating report: {str(e)}")
         else:
             st.warning("Please fill Title and Objective.")
