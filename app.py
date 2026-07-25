@@ -28,7 +28,7 @@ def query_openrouter(prompt_text):
         "Content-Type": "application/json"
     }
     payload = {
-        "model": "google/gemini-2.5-flash:free",
+        "model": "google/gemini-2.0-flash-exp:free",
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt_text}
