@@ -2,7 +2,7 @@ import os
 import requests
 import streamlit as st
 
-# Secrets se OpenRouter API Key lein
+# Secrets se API Key lein
 api_key = st.secrets.get("OPENROUTER_API_KEY") or os.getenv("OPENROUTER_API_KEY")
 
 st.set_page_config(page_title="AI Lab Assistant", page_icon="🧪", layout="wide")
@@ -20,23 +20,40 @@ Always follow this structured response format:
 Keep explanations clear, structured, and academic.
 """
 
-# Guaranteed free models list on OpenRouter
-FREE_MODELS = [
-    "qwen/qwen-2.5-72b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "mistralai/mistral-7b-instruct:free",
-    "google/gemma-2-9b-it:free"
-]
+def get_active_free_models():
+    """Fetch all currently active free models from OpenRouter dynamically"""
+    try:
+        res = requests.get("https://openrouter.ai/api/v1/models")
+        if res.status_code == 200:
+            models_data = res.json().get('data', [])
+            # Filter all models ending with :free
+            free_models = [m['id'] for m in models_data if m['id'].endswith(':free')]
+            return free_models
+    except Exception:
+        pass
+    # Fallback list if fetching fails
+    return [
+        "stepfun/step-1-flash:free",
+        "qwen/qwen-2.5-72b-instruct:free",
+        "google/gemma-2-9b-it:free"
+    ]
 
 def query_openrouter(prompt_text):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://streamlit.io", 
+        "X-Title": "AI Lab Assistant"
     }
     
+    free_models = get_active_free_models()
+    if not free_models:
+        raise Exception("No free models found currently available on OpenRouter.")
+
     last_error = ""
-    for model in FREE_MODELS:
+    # Try active free models one by one
+    for model in free_models[:5]:  # Try top 5 active free models
         payload = {
             "model": model,
             "messages": [
@@ -48,9 +65,9 @@ def query_openrouter(prompt_text):
         if res.status_code == 200:
             return res.json()['choices'][0]['message']['content']
         else:
-            last_error = f"API Error {res.status_code}: {res.text}"
-            
-    raise Exception(f"All free endpoints failed. Last error: {last_error}")
+            last_error = f"Model {model} failed ({res.status_code}): {res.text}"
+
+    raise Exception(f"All available free models failed. Details: {last_error}")
 
 tab1, tab2 = st.tabs(["📋 Experiment Guide", "📑 Lab Report Generator"])
 
